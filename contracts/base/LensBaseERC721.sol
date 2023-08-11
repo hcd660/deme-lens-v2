@@ -3,8 +3,8 @@
 pragma solidity ^0.8.0;
 
 import {Errors} from '../libraries/constants/Errors.sol';
-import {Types} from  "../libraries/MetaTxLib.sol";
-import {MetaTxLib} from 'contracts/libraries/MetaTxLib.sol';
+import {Types} from  "../libraries/constants/Types.sol";
+import {MetaTxLib} from '../libraries/MetaTxLib.sol';
 import {ILensERC721} from "../interfaces/ILensERC721.sol";
 import {IERC721Timestamped} from "../interfaces/IERC721Timestamped.sol";
 import {IERC721Burnable} from "../interfaces/IERC721Burnable.sol";

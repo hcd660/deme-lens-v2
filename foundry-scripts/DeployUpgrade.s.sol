@@ -10,6 +10,8 @@ import 'contracts/modules/act/collect/CollectNFT.sol';
 import 'contracts/misc/migrations/ProfileMigration.sol';
 import {LensHandles} from 'contracts/misc/namespaces/LensHandles.sol';
 import {TokenHandleRegistry} from 'contracts/misc/namespaces/TokenHandleRegistry.sol';
+import "../contracts/namespaces/LensHandles.sol";
+import "../contracts/namespaces/TokenHandleRegistry.sol";
 
 /**
  * This script will deploy the current repository implementations, using the given environment

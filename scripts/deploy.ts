@@ -3,29 +3,33 @@ import { hexlify, keccak256, RLP } from 'ethers/lib/utils';
 import fs from 'fs';
 
 import {
-  LensHub__factory,
-  CollectNFT__factory,
-  Currency__factory,
-  FreeCollectModule__factory,
-  FeeCollectModule__factory,
-  FeeFollowModule__factory,
-  FollowerOnlyReferenceModule__factory,
-  FollowNFT__factory,
-  InteractionLogic__factory,
-  LimitedFeeCollectModule__factory,
-  LimitedTimedFeeCollectModule__factory,
-  ModuleGlobals__factory,
-  PublishingLogic__factory,
-  RevertCollectModule__factory,
-  TimedFeeCollectModule__factory,
-  TransparentUpgradeableProxy__factory,
-  ProfileTokenURILogic__factory,
-  LensPeriphery__factory,
-  UIDataProvider__factory,
-  ProfileFollowModule__factory,
-  RevertFollowModule__factory,
-  ProfileCreationProxy__factory,
-  AuthHub__factory,
+    LensHub__factory,
+    CollectNFT__factory,
+    FeeFollowModule__factory,
+    FollowerOnlyReferenceModule__factory,
+    FollowNFT__factory,
+    ModuleGlobals__factory,
+    TransparentUpgradeableProxy__factory,
+    UIDataProvider__factory,
+    RevertFollowModule__factory,
+    ProfileCreationProxy__factory,
+    ProfileLib__factory,
+    MigrationLib__factory,
+    GovernanceLib__factory,
+    MetaTxLib__factory,
+    PublicationLib__factory,
+    FollowLib__factory,
+    LegacyCollectLib__factory,
+    ValidationLib__factory,
+    ActionLib__factory,
+    ProfileTokenURILib__factory,
+    TokenURIMainFontLib__factory,
+    TokenURISecondaryFontLib__factory,
+    FollowTokenURILib__factory,
+    CollectPublicationAction__factory,
+    LensHandles__factory,
+    HandleTokenURILib__factory,
+    TokenHandleRegistry__factory, LensHubInitializable__factory,
 } from "../typechain-types";
 import { deployContract, waitForTx } from '../tasks/helpers/utils';
 import { ethers } from "hardhat";
@@ -39,11 +43,6 @@ async function main() {
   // Note that the use of these signers is a placeholder and is not meant to be used in
   // production.
   const [deployer, governance, treasuryAddress]: SignerWithAddress[] = await ethers.getSigners();
-  // const ethers = hre.ethers;
-  // const accounts = await ethers.getSigners();
-  // const deployer = accounts[0];
-  // const governance = accounts[1];
-  // const treasuryAddress = accounts[2].address;
   const proxyAdminAddress = deployer.address;
   const profileCreatorAddress = deployer.address;
 
@@ -53,7 +52,7 @@ async function main() {
   console.log('\n\t-- Deploying Module Globals --', deployerNonce);
   const moduleGlobals = await deployContract(
     new ModuleGlobals__factory(deployer).deploy(
-      governance.address,
+        governance.address,
       treasuryAddress.address,
       TREASURY_FEE_BPS,
       {
@@ -65,43 +64,139 @@ async function main() {
 
   console.log('\n\t-- Deploying Logic Libs --');
 
-  const publishingLogic = await deployContract(
-    new PublishingLogic__factory(deployer).deploy({
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
+  const profileLib = await deployContract(
+    new ProfileLib__factory(deployer).deploy({
+        gasPrice: 2000000000,
+        nonce: deployerNonce++,
+      })
   );
-  const interactionLogic = await deployContract(
-    new InteractionLogic__factory(deployer).deploy({
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  const profileTokenURILogic = await deployContract(
-    new ProfileTokenURILogic__factory(deployer).deploy({
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  const hubLibs = {
-    'contracts/libraries/PublishingLogic.sol:PublishingLogic': publishingLogic.address,
-    'contracts/libraries/InteractionLogic.sol:InteractionLogic': interactionLogic.address,
-    'contracts/libraries/ProfileTokenURILogic.sol:ProfileTokenURILogic':
-      profileTokenURILogic.address,
+
+    const migrationLib = await deployContract(
+        new MigrationLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const governanceLib = await deployContract(
+        new GovernanceLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const metaTxLib = await deployContract(
+        new MetaTxLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const followLib = await deployContract(
+        new FollowLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const publicationLib = await deployContract(
+        new PublicationLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const validationLib = await deployContract(
+        new ValidationLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const validationLibs = {'contracts/libraries/ValidationLib.sol:ValidationLib': validationLib.address}
+
+    const legacyCollectLib = await deployContract(
+        new LegacyCollectLib__factory(validationLibs, deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const actionLib = await deployContract(
+        new ActionLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const tokenURIMainFontLib = await deployContract(
+        new TokenURIMainFontLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const tokenURISecondaryFontLib = await deployContract(
+        new TokenURISecondaryFontLib__factory(deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const profileTokenURILibLibraryAddressesLibs = {
+        "contracts/libraries/token-uris/TokenURIMainFontLib.sol:TokenURIMainFontLib": tokenURIMainFontLib.address,
+        "contracts/libraries/token-uris/TokenURISecondaryFontLib.sol:TokenURISecondaryFontLib": tokenURISecondaryFontLib.address
+    }
+
+    const profileTokenURILib = await deployContract(
+        new ProfileTokenURILib__factory(profileTokenURILibLibraryAddressesLibs, deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+
+    const hubLibs = {
+    'contracts/libraries/ProfileLib.sol:ProfileLib': profileLib.address,
+    'contracts/libraries/MigrationLib.sol:MigrationLib': migrationLib.address,
+    'contracts/libraries/GovernanceLib.sol:GovernanceLib': governanceLib.address,
+    'contracts/libraries/MetaTxLib.sol:MetaTxLib':metaTxLib.address,
+    'contracts/libraries/FollowLib.sol:FollowLib':followLib.address,
+    'contracts/libraries/PublicationLib.sol:PublicationLib':publicationLib.address,
+    'contracts/libraries/LegacyCollectLib.sol:LegacyCollectLib':legacyCollectLib.address,
+    'contracts/libraries/ActionLib.sol:ActionLib':actionLib.address,
+    'contracts/libraries/token-uris/ProfileTokenURILib.sol:ProfileTokenURILib':profileTokenURILib.address,
   };
+
 
   // Here, we pre-compute the nonces and addresses used to deploy the contracts.
   // const nonce = await deployer.getTransactionCount();
   const followNFTNonce = hexlify(deployerNonce + 1);
-  const collectNFTNonce = hexlify(deployerNonce + 2);
-  const hubProxyNonce = hexlify(deployerNonce + 3);
+    const actionModuleNonce = hexlify(deployerNonce + 2);
+  const collectNFTNonce = hexlify(deployerNonce + 3);
+  const lensHandlesNonce = hexlify(deployerNonce + 4);
+  const tokenHandleRegistryNonce = hexlify(deployerNonce + 5);
+  const newFeeFollowModuleNonce = hexlify(deployerNonce + 6);
+  const hubProxyNonce = hexlify(deployerNonce + 7);
 
   const followNFTImplAddress =
     '0x' + keccak256(RLP.encode([deployer.address, followNFTNonce])).substr(26);
+
+    const actionModuleAddress =
+        '0x' + keccak256(RLP.encode([deployer.address, actionModuleNonce])).substr(26);
+
   const collectNFTImplAddress =
     '0x' + keccak256(RLP.encode([deployer.address, collectNFTNonce])).substr(26);
+    const lensHandlesAddress =
+        '0x' + keccak256(RLP.encode([deployer.address, lensHandlesNonce])).substr(26);
+    const tokenHandleRegistryAddress =
+        '0x' + keccak256(RLP.encode([deployer.address, tokenHandleRegistryNonce])).substr(26);
+
+    const newFeeFollowModule =
+        '0x' + keccak256(RLP.encode([deployer.address, newFeeFollowModuleNonce])).substr(26);
   const hubProxyAddress =
     '0x' + keccak256(RLP.encode([deployer.address, hubProxyNonce])).substr(26);
+
 
   console.log('\n\t-- followNFTImplAddress --', followNFTImplAddress);
   console.log('\n\t-- collectNFTImplAddress --', collectNFTImplAddress);
@@ -110,35 +205,102 @@ async function main() {
   // Next, we deploy first the hub implementation, then the followNFT implementation, the collectNFT, and finally the
   // hub proxy with initialization.
   console.log('\n\t-- Deploying Hub Implementation --');
-
+  const tokenGuardianCooldown = 0;
   const lensHubImpl = await deployContract(
-    new LensHub__factory(hubLibs, deployer).deploy(followNFTImplAddress, collectNFTImplAddress, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
+    new LensHubInitializable__factory(hubLibs, deployer).deploy(
+        moduleGlobals.address
+        , followNFTImplAddress
+        , collectNFTImplAddress
+        , lensHandlesAddress
+        , tokenHandleRegistryAddress
+        , newFeeFollowModule
+        , tokenGuardianCooldown
+        ,{
+          gasPrice: 2000000000,
+          nonce: deployerNonce++,
+        })
   );
 
   console.log('\n\t-- Deploying Hub Implementation end --');
 
-  console.log('\n\t-- Deploying Follow & Collect NFT Implementations --');
-  await deployContract(
-    new FollowNFT__factory(deployer).deploy(hubProxyAddress, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  await deployContract(
-    new CollectNFT__factory(deployer).deploy(hubProxyAddress, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
+    // Next, we deploy first the hub implementation, then the followNFT implementation, the collectNFT, and finally the
+    // hub proxy with initialization.
 
-  console.log('\n\t-- Deploying Follow & Collect NFT Implementations end --');
+    const followTokenURILib = await deployContract(
+        new FollowTokenURILib__factory(profileTokenURILibLibraryAddressesLibs, deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+   const  followNFTLibraryAddresses = {
+        ["contracts/libraries/token-uris/FollowTokenURILib.sol:FollowTokenURILib"]: followTokenURILib.address
+    }
+
+  console.log('\n\t-- Deploying Follow & Collect NFT Implementations --');
+    //1
+  await deployContract(
+    new FollowNFT__factory(followNFTLibraryAddresses, deployer).deploy(hubProxyAddress, {
+      gasPrice: 2000000000,
+      nonce: deployerNonce++,
+    })
+  );
+    console.log('\n\t-- 1 end --');
+  //2
+    await deployContract(
+        new CollectPublicationAction__factory(deployer).deploy(hubProxyAddress, collectNFTImplAddress, moduleGlobals.address, {
+            gasPrice: 2000000000,
+            nonce: deployerNonce++
+        })
+    );
+    console.log('\n\t-- 2 end --');
+    //3
+  await deployContract(
+    new CollectNFT__factory(deployer).deploy(hubProxyAddress, actionModuleAddress, {
+      gasPrice: 2000000000,
+      nonce: deployerNonce++
+    })
+  );
+    console.log('\n\t-- 3 end --');
+    const handleTokenURILib = await deployContract(
+        new HandleTokenURILib__factory(profileTokenURILibLibraryAddressesLibs, deployer).deploy({
+            gasPrice: 2000000000,
+            nonce: deployerNonce++,
+        })
+    );
+
+    const lensHandlesLibraryAddresses = {
+        ["contracts/libraries/token-uris/HandleTokenURILib.sol:HandleTokenURILib"]: handleTokenURILib.address
+    }
+    //4
+    await deployContract(
+        new LensHandles__factory(lensHandlesLibraryAddresses, deployer).deploy(deployer.address, hubProxyAddress, tokenGuardianCooldown, {
+            gasPrice: 2000000000,
+            nonce: deployerNonce++
+        })
+    );
+    console.log('\n\t-- 4 end --');
+    //5
+    await deployContract(
+        new TokenHandleRegistry__factory(deployer).deploy(hubProxyAddress, lensHandlesAddress, {
+            gasPrice: 2000000000,
+            nonce: deployerNonce++
+        })
+    );
+    console.log('\n\t-- 5 end --');
+    //6 newFeeFollowModuleNonce
+    await deployContract(
+        new FeeFollowModule__factory(deployer).deploy(hubProxyAddress, moduleGlobals.address, {
+            gasPrice: 2000000000,
+            nonce: deployerNonce++
+        })
+    );
+    console.log('\n\t-- 6 end --');
+
   let data = lensHubImpl.interface.encodeFunctionData('initialize', [
     LENS_HUB_NFT_NAME,
     LENS_HUB_NFT_SYMBOL,
-    governance.address,
+      governance.address,
   ]);
 
   console.log('\n\t-- Deploying Hub Proxy --');
@@ -154,262 +316,19 @@ async function main() {
     )
   );
 
-  // Connect the hub proxy to the LensHub factory and the governance for ease of use.
-  const lensHub = LensHub__factory.connect(proxy.address, governance);
+    const lensHub = LensHub__factory.connect(proxy.address, governance);
 
-  console.log('\n\t-- Deploying Lens Periphery --');
-  const lensPeriphery = await new LensPeriphery__factory(deployer).deploy(lensHub.address, {
-    gasPrice: 2000000000,
-    nonce: deployerNonce++,
-  });
-
-  // Currency
-  console.log('\n\t-- Deploying Currency --');
-  const currency = await deployContract(
-    new Currency__factory(deployer).deploy({
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-
-  // Deploy collect modules
-  console.log('\n\t-- Deploying feeCollectModule --');
-  const feeCollectModule = await deployContract(
-    new FeeCollectModule__factory(deployer).deploy(lensHub.address, moduleGlobals.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  console.log('\n\t-- Deploying limitedFeeCollectModule --');
-  const limitedFeeCollectModule = await deployContract(
-    new LimitedFeeCollectModule__factory(deployer).deploy(lensHub.address, moduleGlobals.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  console.log('\n\t-- Deploying timedFeeCollectModule --');
-  const timedFeeCollectModule = await deployContract(
-    new TimedFeeCollectModule__factory(deployer).deploy(lensHub.address, moduleGlobals.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  console.log('\n\t-- Deploying limitedTimedFeeCollectModule --');
-  const limitedTimedFeeCollectModule = await deployContract(
-    new LimitedTimedFeeCollectModule__factory(deployer).deploy(
-      lensHub.address,
-      moduleGlobals.address,
-      {
-        gasPrice: 2000000000,
-        nonce: deployerNonce++,
-      }
-    )
-  );
-
-  console.log('\n\t-- Deploying revertCollectModule --');
-  const revertCollectModule = await deployContract(
-    new RevertCollectModule__factory(deployer).deploy({
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  console.log('\n\t-- Deploying freeCollectModule --');
-  const freeCollectModule = await deployContract(
-    new FreeCollectModule__factory(deployer).deploy(lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-
-  // Deploy follow modules
-  console.log('\n\t-- Deploying feeFollowModule --');
-  const feeFollowModule = await deployContract(
-    new FeeFollowModule__factory(deployer).deploy(lensHub.address, moduleGlobals.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  console.log('\n\t-- Deploying profileFollowModule --');
-  const profileFollowModule = await deployContract(
-    new ProfileFollowModule__factory(deployer).deploy(lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  console.log('\n\t-- Deploying revertFollowModule --');
-  const revertFollowModule = await deployContract(
-    new RevertFollowModule__factory(deployer).deploy(lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-  // --- COMMENTED OUT AS THIS IS NOT A LAUNCH MODULE ---
-  // console.log('\n\t-- Deploying approvalFollowModule --');
-  // const approvalFollowModule = await deployContract(
-  //   new ApprovalFollowModule__factory(deployer).deploy(lensHub.address, {
-  //   gasPrice: 2000000000,
-  //   nonce: deployerNonce++,
-  //   })
-  // );
-
-  // Deploy reference module
-  console.log('\n\t-- Deploying followerOnlyReferenceModule --');
-  const followerOnlyReferenceModule = await deployContract(
-    new FollowerOnlyReferenceModule__factory(deployer).deploy(lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-
-  // Deploy UIDataProvider
-  console.log('\n\t-- Deploying UI Data Provider --');
-  const uiDataProvider = await deployContract(
-    new UIDataProvider__factory(deployer).deploy(lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-
-  console.log('\n\t-- Deploying Profile Creation Proxy --');
-  const profileCreationProxy = await deployContract(
-    new ProfileCreationProxy__factory(deployer).deploy(profileCreatorAddress, lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-
-  // Deploy AuthHub
-  console.log('\n\t-- Deploying AuthHub --');
-  const authHub = await deployContract(
-    new AuthHub__factory(deployer).deploy(lensHub.address, {
-      gasPrice: 2000000000,
-      nonce: deployerNonce++,
-    })
-  );
-
-  // Whitelist the collect modules
-  console.log('\n\t-- Whitelisting Collect Modules --');
-  let governanceNonce = await ethers.provider.getTransactionCount(governance.address);
-  await waitForTx(
-    lensHub.whitelistCollectModule(feeCollectModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistCollectModule(limitedFeeCollectModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistCollectModule(timedFeeCollectModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistCollectModule(limitedTimedFeeCollectModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistCollectModule(revertCollectModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistCollectModule(freeCollectModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-
-  // Whitelist the follow modules
-  console.log('\n\t-- Whitelisting Follow Modules --');
-  await waitForTx(
-    lensHub.whitelistFollowModule(feeFollowModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistFollowModule(profileFollowModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  await waitForTx(
-    lensHub.whitelistFollowModule(revertFollowModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-  // --- COMMENTED OUT AS THIS IS NOT A LAUNCH MODULE ---
-  // await waitForTx(
-  // lensHub.whitelistFollowModule(approvalFollowModule.address, true, {
-  // gasPrice: 2000000000,
-  // nonce: governanceNonce++,
-  // })
-  // );
-
-  // Whitelist the reference module
-  console.log('\n\t-- Whitelisting Reference Module --');
-  await waitForTx(
-    lensHub.whitelistReferenceModule(followerOnlyReferenceModule.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
-
-  // Whitelist the currency
-  console.log('\n\t-- Whitelisting Currency in Module Globals --');
-  await waitForTx(
-    moduleGlobals
-      .connect(governance)
-      .whitelistCurrency(currency.address, true, {
-        gasPrice: 2000000000,
-        nonce: governanceNonce++,
-      })
-  );
-
-  // Whitelist the profile creation proxy
-  console.log('\n\t-- Whitelisting Profile Creation Proxy --');
-  await waitForTx(
-    lensHub.whitelistProfileCreator(profileCreationProxy.address, true, {
-      gasPrice: 2000000000,
-      nonce: governanceNonce++,
-    })
-  );
 
   // Save and log the addresses
   const addrs = {
     'lensHub proxy': lensHub.address,
     'lensHub impl:': lensHubImpl.address,
-    'publishing logic lib': publishingLogic.address,
-    'interaction logic lib': interactionLogic.address,
     'follow NFT impl': followNFTImplAddress,
     'collect NFT impl': collectNFTImplAddress,
-    currency: currency.address,
-    'lens periphery': lensPeriphery.address,
     'module globals': moduleGlobals.address,
-    'fee collect module': feeCollectModule.address,
-    'limited fee collect module': limitedFeeCollectModule.address,
-    'timed fee collect module': timedFeeCollectModule.address,
-    'limited timed fee collect module': limitedTimedFeeCollectModule.address,
-    'revert collect module': revertCollectModule.address,
-    'free collect module': freeCollectModule.address,
-    'fee follow module': feeFollowModule.address,
-    'profile follow module': profileFollowModule.address,
-    'revert follow module': revertFollowModule.address,
-    // --- COMMENTED OUT AS THIS IS NOT A LAUNCH MODULE ---
-    // 'approval follow module': approvalFollowModule.address,
-    'follower only reference module': followerOnlyReferenceModule.address,
-    'UI data provider': uiDataProvider.address,
-    'Profile creation proxy': profileCreationProxy.address,
-    'AuthHub ': authHub.address,
+      'tokenHandleRegistryAddress': tokenHandleRegistryAddress,
+      lensHandlesAddress,
+      newFeeFollowModule,
   };
   const json = JSON.stringify(addrs, null, 2);
   console.log(json);
@@ -423,3 +342,5 @@ main()
     console.error(e);
     process.exit(1);
   });
+
+//  npx hardhat run scripts/deploy.ts --network local
